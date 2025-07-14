@@ -57,19 +57,19 @@ jobs:
 
       - name: ⏳ Wait for EC2 SSH
         run: |
-          until ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; do
+          until ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_IP }} 'echo SSH ready'; do
             echo "Waiting for SSH to be ready..."
             sleep 10
           done
 
       - name: 🚀 Deploy Application
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_IP }} "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
 
       - name: 🩷 Validate Health
         run: |
           for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ env.EC2_IP }}:80)
             if [ "$STATUS" == "200" ]; then
               echo "✅ App is healthy"
               exit 0
