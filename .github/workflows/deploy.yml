@@ -52,10 +52,11 @@ jobs:
       - name: 🌐 Get EC2 Public IP
         id: get_ip
         run: |
-          cd ec2-automation/terraform
+         cd ec2-automation/terraform
           IP=$(terraform output -raw instance_public_ip)
           echo "✅ EC2 Public IP: $IP"
           echo "EC2_IP=$IP" >> $GITHUB_ENV
+
 
       - name: ⏳ Wait for SSH
         run: |
