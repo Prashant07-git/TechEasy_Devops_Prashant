@@ -54,22 +54,23 @@ jobs:
         id: get_ip
         run: |
           cd ec2-automation/terraform
+          # capture only the IP itself
           IP=$(terraform output -raw instance_public_ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
-          echo "✅ EC2 Public IP: $IP"
           echo "EC2_IP=$IP" >> $GITHUB_ENV
 
       - name: ⏳ Wait for SSH to be ready
         run: |
           for i in {1..10}; do
-            echo "⏳ Checking SSH to $EC2_IP..."
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP "echo 'SSH OK'" >/dev/null 2>&1; then
+            echo "⏳ Attempt $i: testing SSH on $EC2_IP..."
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo ok' >/dev/null 2>&1; then
               echo "✅ SSH is ready"
               exit 0
             fi
             sleep 10
           done
-          echo "❌ SSH not ready after waiting"
+          echo "❌ SSH not ready after 10 tries"
           exit 1
+
 
       - name: 🚀 Deploy application
         run: |
