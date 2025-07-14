@@ -22,9 +22,6 @@ jobs:
       - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: "✅ Debug: Show repo structure"
-        run: ls -R
-
       - name: ✅ Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -53,18 +50,18 @@ jobs:
         id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
-          echo "✅ Public IP: $IP"
-          echo "ip=$IP" >> $GITHUB_OUTPUT
+          PUBLIC_IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
+          echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+          echo "✅ EC2 Public IP: $PUBLIC_IP"
 
-      - name: ⏳ Wait for EC2 SSH
+      - name: ⏳ Wait for SSH to be ready
         run: |
           for i in {1..10}; do
-            if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ steps.get_ec2_ip.outputs.ip }} 'echo SSH ready'; then
-              echo "✅ SSH ready"
+            if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_PUBLIC_IP 'echo SSH ready'; then
+              echo "✅ SSH is ready"
               exit 0
             else
-              echo "⏳ Waiting for SSH to be ready..."
+              echo "⏳ Waiting for SSH..."
               sleep 10
             fi
           done
@@ -73,12 +70,12 @@ jobs:
 
       - name: 🚀 Deploy Application
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ steps.get_ec2_ip.outputs.ip }} "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_PUBLIC_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
 
       - name: 🩷 Validate Health
         run: |
           for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.get_ec2_ip.outputs.ip }}:80)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_PUBLIC_IP:80)
             if [ "$STATUS" == "200" ]; then
               echo "✅ App is healthy"
               exit 0
