@@ -22,27 +22,29 @@ jobs:
       - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: "✅ Debug: Show repo structure"
+      - name: 📝 Show repo structure
         run: ls -R
 
-      - name: ✅ Set up SSH key
+      - name: 🔑 Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: ✅ Configure AWS Credentials
+      - name: ☁️ Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: ✅ Set up Terraform
+      - name: 🛠️ Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: 🔷 Terraform Init
-        run: cd ec2-automation/terraform && terraform init
+        run: |
+          cd ec2-automation/terraform
+          terraform init
 
       - name: 🔷 Terraform Apply
         run: |
@@ -53,14 +55,12 @@ jobs:
         id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          # run terraform output and filter only the IP using grep
-          terraform output instance_public_ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' > ip.txt
-          cat ip.txt
-          echo "ip=$(cat ip.txt)" >> $GITHUB_OUTPUT
+          ip=$(terraform output -raw instance_public_ip)
+          echo "EC2_IP=$ip"
+          echo "ec2_ip=$ip" >> $GITHUB_ENV
 
-      - name: 🕒 Wait for SSH
+      - name: ⏳ Wait for SSH
         run: |
-          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
           echo "Waiting for SSH to $EC2_IP..."
           for i in {1..10}; do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; then
@@ -72,17 +72,17 @@ jobs:
           done
           echo "❌ SSH failed after waiting"
           exit 1
-
-
+        env:
+          EC2_IP: ${{ env.ec2_ip }}
 
       - name: 🚀 Deploy Application
         run: |
-          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
+        env:
+          EC2_IP: ${{ env.ec2_ip }}
 
       - name: 🩷 Validate Health
         run: |
-          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80)
             if [ "$STATUS" == "200" ]; then
@@ -95,3 +95,5 @@ jobs:
           done
           echo "❌ App failed health check"
           exit 1
+        env:
+          EC2_IP: ${{ env.ec2_ip }}
