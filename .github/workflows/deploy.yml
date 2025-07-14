@@ -19,35 +19,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📁 Checkout repository
+      - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: "🧪 Debug: Show repo structure"
+      - name: ✅ Debug: Show repo structure
         run: ls -R
 
-      - name: 🔐 Set up SSH key
+      - name: ✅ Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: 🧰 Set up Terraform
+      - name: ✅ Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: ✅ Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: 📦 Terraform Init
+      - name: 🔷 Terraform Init
         run: cd ec2-automation/terraform && terraform init
 
-      - name: 🧹 Terraform Destroy (to clean up any previous run)
-        run: |
-          cd ec2-automation/terraform
-          terraform destroy -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
-
-      - name: 🚀 Terraform Apply
+      - name: 🔷 Terraform Apply
         run: |
           cd ec2-automation/terraform
           terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
 
-      - name: 🌐 Get EC2 Public IP
+      - name: 🔷 Get EC2 Public IP
         id: ec2_ip
         run: |
           cd ec2-automation/terraform
@@ -55,22 +57,16 @@ jobs:
 
       - name: ⏳ Wait for EC2 SSH
         run: |
-          for i in {1..10}; do
-            if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; then
-              echo "✅ SSH ready"
-              break
-            else
-              echo "Waiting for SSH to be ready..."
-              sleep 10
-            fi
+          until ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; do
+            echo "Waiting for SSH to be ready..."
+            sleep 10
           done
 
-      - name: 📄 Deploy Application
+      - name: 🚀 Deploy Application
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP \
-            "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
 
-      - name: ❤️ Validate Health
+      - name: 🩷 Validate Health
         run: |
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80)
