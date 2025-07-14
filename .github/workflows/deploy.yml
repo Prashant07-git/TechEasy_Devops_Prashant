@@ -45,6 +45,12 @@ jobs:
       - name: Terraform Init
         run: cd ec2-automation/terraform && terraform init
 
+      - name: Terraform Destroy (if any existing)
+        run: |
+          cd ec2-automation/terraform
+          terraform destroy -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
+
+
       - name: Terraform Apply
         run: |
           cd ec2-automation/terraform
