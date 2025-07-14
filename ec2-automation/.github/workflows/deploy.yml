@@ -1,70 +1,23 @@
-name: CI/CD - EC2 App Deployment
+name: 🚀 Deploy to EC2
 
 on:
   push:
     branches:
       - main
-    tags:
-      - deploy-*
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Stage to deploy (dev/prod)'
-        required: true
-        default: 'dev'
 
 jobs:
   deploy:
-    name: Deploy App
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: ⬇️ Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+    - name: 🔐 Set up SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Init
-        run: cd terraform && terraform init
-
-      - name: Terraform Apply
-        run: |
-          cd terraform
-          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
-
-      - name: Get EC2 Public IP
-        id: ec2_ip
-        run: |
-          cd terraform
-          echo "EC2_IP=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
-
-      - name: Wait for EC2 SSH
-        run: |
-          until ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; do
-            sleep 10
-          done
-
-      - name: Deploy Application
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'bash -s' < main.sh ${{ github.event.inputs.stage || 'dev' }}
-
-      - name: Validate Health
-        run: |
-          for i in {1..10}; do
-            if curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80 | grep -q "200"; then
-              echo "✅ App is healthy"
-              exit 0
-            else
-              echo "Waiting for app to become healthy..."
-              sleep 10
-            fi
-          done
-          echo "❌ App failed health check"
-          exit 1
+    - name: 🖥️ Run deployment script on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@<EC2_PUBLIC_IP> "cd ~/ec2-automation && bash main.sh Dev"
