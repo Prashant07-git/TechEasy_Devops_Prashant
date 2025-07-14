@@ -55,10 +55,13 @@ jobs:
           terraform apply -auto-approve -var-file="${STAGE}.tfvars" | tee terraform-apply.log
 
       - name: 🌐 Get EC2 Public IP
-        id: ec2_ip
+        id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          echo "EC2_IP=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
+          IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
+          echo "✅ Public IP: $IP"
+          echo "EC2_IP=$IP" >> $GITHUB_ENV
+
 
       - name: ⏳ Wait for EC2 SSH
         run: |
