@@ -1,0 +1,14 @@
+# AWS keys
+keys/*.pem
+
+# Terraform state
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# Logs
+*.log
+
+# IDE files
+*.vscode/
