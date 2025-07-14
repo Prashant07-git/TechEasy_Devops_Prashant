@@ -4,8 +4,10 @@ resource "aws_instance" "log_server" {
   key_name                    = "TechEasy3"
   subnet_id                   = data.aws_subnet.default.id
   associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.s3_upload_profile.name
-  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+
+  # Use data sources here
+  iam_instance_profile        = data.aws_iam_instance_profile.s3_upload_profile.name
+  vpc_security_group_ids      = [data.aws_security_group.ec2_sg.id]
 
   tags = {
     Name = "${var.stage}-log-server"
