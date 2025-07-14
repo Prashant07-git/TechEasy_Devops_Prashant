@@ -22,26 +22,29 @@ jobs:
       - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: ✅ Set up SSH key
+      - name: 🗂️ Show repo structure
+        run: ls -R
+
+      - name: 🔑 Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: ✅ Configure AWS Credentials
+      - name: 🌐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: ✅ Set up Terraform
+      - name: 🛠️ Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: 🔷 Terraform Init
+      - name: 📦 Terraform Init
         run: cd ec2-automation/terraform && terraform init
 
-      - name: 🔷 Terraform Apply
+      - name: 🚀 Terraform Apply
         run: |
           cd ec2-automation/terraform
           terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
@@ -51,28 +54,31 @@ jobs:
         run: |
           cd ec2-automation/terraform
           PUBLIC_IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
+          if [ -z "$PUBLIC_IP" ]; then
+            echo "❌ Failed to fetch EC2 public IP"
+            exit 1
+          fi
           echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
           echo "✅ EC2 Public IP: $PUBLIC_IP"
 
-      - name: ⏳ Wait for SSH to be ready
+      - name: 🕒 Wait for SSH
         run: |
           for i in {1..10}; do
-            if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_PUBLIC_IP 'echo SSH ready'; then
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_PUBLIC_IP 'echo SSH ready'; then
               echo "✅ SSH is ready"
               exit 0
-            else
-              echo "⏳ Waiting for SSH..."
-              sleep 10
             fi
+            echo "⏳ Waiting for SSH..."
+            sleep 10
           done
           echo "❌ SSH failed after waiting"
           exit 1
 
-      - name: 🚀 Deploy Application
+      - name: 🧑‍💻 Deploy Application
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_PUBLIC_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
 
-      - name: 🩷 Validate Health
+      - name: 🩺 Health Check
         run: |
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_PUBLIC_IP:80)
