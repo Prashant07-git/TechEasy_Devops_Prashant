@@ -68,11 +68,12 @@ jobs:
               echo "✅ SSH is ready"
               exit 0
             fi
-          echo "⌛ attempt $i: still waiting..."
-          sleep 10
+            echo "⌛ attempt $i: still waiting..."
+            sleep 10
           done
           echo "❌ SSH failed after waiting"
           exit 1
+
 
 
       - name: 🚀 Deploy Application
