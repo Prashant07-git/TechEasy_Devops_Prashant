@@ -53,9 +53,11 @@ jobs:
         id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          RAW_IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
-          echo "✅ EC2 Public IP: $RAW_IP"
+          terraform output -raw instance_public_ip | tee tfout.txt
+          RAW_IP=$(cat tfout.txt | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
+          echo "✅ Extracted EC2 IP: $RAW_IP"
           echo "ip=$RAW_IP" >> $GITHUB_OUTPUT
+
 
       - name: 🕒 Wait for SSH
         run: |
