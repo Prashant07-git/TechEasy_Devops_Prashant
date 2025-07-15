@@ -49,7 +49,7 @@ jobs:
       - name: 🔷 Terraform Apply
         run: |
           cd ec2-automation/terraform
-          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage }}.tfvars"
+          terraform apply -auto-approve -var-file="dev.tfvars"
 
       - name: 🌐 Get EC2 Public IP
         run: |
