@@ -1,5 +1,6 @@
 name: CI/CD - EC2 App Deployment
 
+
 on:
   push:
     branches:
