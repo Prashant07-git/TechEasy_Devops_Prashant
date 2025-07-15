@@ -22,7 +22,7 @@ jobs:
       - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: ✅ Show repo structure
+      - name: "✅ Debug: Show repo structure"
         run: ls -R
 
       - name: ✅ Set up SSH key
@@ -42,27 +42,27 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: 🔷 Terraform Init
-        run: |
-          cd ec2-automation/terraform
-          terraform init
+        run: cd ec2-automation/terraform && terraform init
 
       - name: 🔷 Terraform Apply
         run: |
           cd ec2-automation/terraform
-          terraform apply -auto-approve -var-file="dev.tfvars"
+          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
 
       - name: 🌐 Get EC2 Public IP
+        id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
-          echo "✅ EC2 Public IP: $IP"
-          echo "EC2_IP=$IP" >> $GITHUB_ENV
+          RAW_IP=$(terraform output -raw instance_public_ip | tr -d '\r\n')
+          echo "✅ EC2 Public IP: $RAW_IP"
+          echo "ip=$RAW_IP" >> $GITHUB_OUTPUT
 
-      - name: ⏳ Wait for SSH to be ready
+      - name: 🕒 Wait for SSH
         run: |
+          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
           echo "Waiting for SSH on $EC2_IP..."
-          for i in {1..10}; do
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready' >/dev/null 2>&1; then
+          for i in {1..15}; do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; then
               echo "✅ SSH is ready"
               exit 0
             fi
@@ -74,18 +74,19 @@ jobs:
 
       - name: 🚀 Deploy Application
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP \
-          "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage }}"
+          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
 
       - name: 🩷 Validate Health
         run: |
+          EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80)
             if [ "$STATUS" == "200" ]; then
               echo "✅ App is healthy"
               exit 0
             else
-              echo "⌛ Waiting for app to become healthy... ($STATUS)"
+              echo "Waiting for app to become healthy... ($STATUS)"
               sleep 10
             fi
           done
