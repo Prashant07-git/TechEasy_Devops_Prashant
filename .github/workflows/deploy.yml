@@ -65,11 +65,12 @@ jobs:
         id: get_ec2_ip
         shell: pwsh
         run: |
-         cd ec2-automation/terraform
-         Write-Output "==> Running: terraform output -raw instance_public_ip"
-         $IP = terraform output -raw instance_public_ip
+          cd ec2-automation/terraform
+          Write-Output "==> Running: terraform output -raw instance_public_ip"
+          $IP = terraform output -raw instance_public_ip
           Write-Output "✅ Extracted EC2 IP: $IP"
           echo "ip=$IP" >> $env:GITHUB_OUTPUT
+
 
 
       - name: ⏳ Wait for SSH to be ready
