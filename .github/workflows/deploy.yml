@@ -34,7 +34,7 @@ jobs:
 
 
       - name: 🧪 Set up SSH key
-        shell: pwsh
+        shell: powershell
         run: |
           $sshPath = "$env:USERPROFILE\.ssh"
           $keyPath = "$sshPath\id_rsa"
