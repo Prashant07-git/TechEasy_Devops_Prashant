@@ -31,10 +31,15 @@ jobs:
           if (!(Test-Path -Path $env:USERPROFILE\.ssh)) {
            New-Item -ItemType Directory -Path $env:USERPROFILE\.ssh
           }
-          # Just overwrite the key directly
-          Set-Content -Path $env:USERPROFILE\.ssh\id_rsa -Value "${{ secrets.EC2_SSH_KEY }}" -Force
 
-          icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$($env:USERNAME):R"
+          try {
+           Remove-Item -Path $env:USERPROFILE\.ssh\id_rsa -Force -ErrorAction SilentlyContinue
+          } catch {}
+
+           Set-Content -Path $env:USERPROFILE\.ssh\id_rsa -Value "${{ secrets.EC2_SSH_KEY }}" -Force
+
+           icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$($env:USERNAME):R"
+
 
       - name: 🌍 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
