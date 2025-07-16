@@ -4,36 +4,24 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Stage to deploy (dev/prod)'
-        required: true
-        default: 'dev'
 
 jobs:
   deploy:
-    name: 🚀 Deploy App
-    runs-on: [self-hosted, Windows, X64]
+    name: Deploy App to EC2
+    runs-on: self-hosted
 
     steps:
-      - name: ✅ Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: "✅ Debug: Show repo structure"
-        run: ls -R
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 🔷 Debug existing file
-        shell: powershell
-        run: |
-          if (Test-Path -Path "$env:USERPROFILE\.ssh\id_rsa") {
-            Get-Acl "$env:USERPROFILE\.ssh\id_rsa" | Format-List
-          } else {
-            Write-Output "id_rsa does not exist"
-          }
-
-
-      - name: 🧪 Set up SSH key
+      - name: Setup SSH key
         shell: powershell
         run: |
           $sshPath = "$env:USERPROFILE\.ssh"
@@ -54,48 +42,24 @@ jobs:
               Write-Output "✅ SSH key already exists. Skipping."
           }
 
-      - name: ✅ Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: ✅ Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: 🔷 Terraform Init
+      - name: Terraform Init & Apply
+        working-directory: ec2-automation/terraform
         run: |
-          cd ec2-automation/terraform
           terraform init
+          terraform apply -auto-approve
 
-      - name: 🔷 Terraform Apply
+      - name: Get EC2 Instance IP
+        working-directory: ec2-automation/terraform
+        shell: powershell
         run: |
-          cd ec2-automation/terraform
-          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
-
-      - name: 🌐 Get EC2 Public IP
-        id: get_ec2_ip
-        shell: pwsh
-        run: |
-          cd ec2-automation/terraform
           Write-Output "==> Running: terraform output -raw instance_public_ip"
           $IP = terraform output -raw instance_public_ip
           Write-Output "✅ Extracted EC2 IP: $IP"
           echo "ip=$IP" >> $env:GITHUB_OUTPUT
+        id: get_ip
 
-      - name: 🕒 Wait for SSH
-        shell: pwsh
+      - name: Deploy App to EC2
+        shell: bash
         run: |
-          $EC2_IP = "${{ steps.get_ec2_ip.outputs.ip }}"
-          Write-Output "👉 EC2_IP resolved to: $EC2_IP"
-          Write-Output "Waiting for SSH on $EC2_IP..."
-          for ($i = 1; $i -le 15; $i++) {
-            if (Test-Connection -ComputerName $EC2_IP -Quiet -Count 1) {
-              Write-Output "✅ SSH is ready"
-              exit 0
-            }
-            Write-Output "⌛ attempt $i: still waiting..."
-            Start-Sleep -Seconds 10
-          }
-          Write-Error "❌ SSH failed after waiting"
+          echo "Connecting to EC2 and deploying..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ steps.get_ip.outputs.ip }} 'echo Hello from EC2 && uptime'
