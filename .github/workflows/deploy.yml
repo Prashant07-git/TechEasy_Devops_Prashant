@@ -26,19 +26,26 @@ jobs:
         run: ls -R
 
       - name: ✅ Set up SSH key
-        shell: powershell
+        shell: pwsh
         run: |
-          if (!(Test-Path -Path $env:USERPROFILE\.ssh)) {
-           New-Item -ItemType Directory -Path $env:USERPROFILE\.ssh
+          $sshPath = "$env:USERPROFILE\.ssh"
+          $keyPath = "$sshPath\id_rsa"
+
+          if (!(Test-Path -Path $sshPath)) {
+              New-Item -ItemType Directory -Path $sshPath
           }
 
-          try {
-           Remove-Item -Path $env:USERPROFILE\.ssh\id_rsa -Force -ErrorAction SilentlyContinue
-          } catch {}
+          if (Test-Path -Path $keyPath) {
+              Write-Output "🔷 Removing existing SSH key"
+              Remove-Item -Path $keyPath -Force
+          }
 
-           Set-Content -Path $env:USERPROFILE\.ssh\id_rsa -Value "${{ secrets.EC2_SSH_KEY }}" -Force
+          Write-Output "🔷 Writing new SSH key"
+          Set-Content -Path $keyPath -Value "${{ secrets.EC2_SSH_KEY }}" -Force
 
-           icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$($env:USERNAME):R"
+          Write-Output "🔷 Setting permissions"
+          icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
+
 
 
       - name: 🌍 Configure AWS credentials
