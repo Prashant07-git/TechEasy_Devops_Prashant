@@ -21,8 +21,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Setup SSH key
-        shell: powershell
+      - name: 🧪 SSH Key Setup
+        shell: pwsh
         run: |
           $sshPath = "$env:USERPROFILE\.ssh"
           $keyPath = "$sshPath\id_rsa"
@@ -34,13 +34,16 @@ jobs:
 
           if (-not (Test-Path -Path $keyPath)) {
               Write-Output "🔷 Writing new SSH key"
-              Set-Content -Path $keyPath -Value "${{ secrets.EC2_SSH_KEY }}" -Force
+              Set-Content -Path $keyPath -Value "${{ secrets.SSH_PRIVATE_KEY }}" -Force
 
               Write-Output "🔷 Setting permissions"
               icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
-          } else {
+          }
+          else {
               Write-Output "✅ SSH key already exists. Skipping."
           }
+
+                
 
       - name: Terraform Init & Apply
         working-directory: ec2-automation/terraform
