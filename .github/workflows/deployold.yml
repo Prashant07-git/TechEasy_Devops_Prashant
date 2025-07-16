@@ -22,7 +22,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: 🧪 SSH Key Setup
-        shell: pwsh
+        shell: powershell
         run: |
           $sshPath = "$env:USERPROFILE\.ssh"
           $keyPath = "$sshPath\id_rsa"
