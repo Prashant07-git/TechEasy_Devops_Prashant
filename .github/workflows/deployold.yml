@@ -47,19 +47,19 @@ jobs:
                 
 
       - name: Terraform Init
-        shell: bash
+        shell: powershell
         run: |
           Set-Location ec2-automation/terraform
           terraform init
 
       - name: Terraform Plan
-        shell: bash
+        shell: powershell
         run: |
           Set-Location ec2-automation/terraform
           terraform plan -var-file="dev.tfvars"
 
       - name: Terraform Apply
-        shell: bash
+        shell: powershell
         run: |
           Set-Location ec2-automation/terraform
           terraform apply -auto-approve -var-file="dev.tfvars"
