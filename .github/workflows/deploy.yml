@@ -26,7 +26,7 @@ jobs:
         run: ls -R
 
       - name: ✅ Set up SSH key
-        shell: pwsh
+        shell: powershell
         run: |
           if (!(Test-Path -Path $env:USERPROFILE\.ssh)) {
            New-Item -ItemType Directory -Path $env:USERPROFILE\.ssh
