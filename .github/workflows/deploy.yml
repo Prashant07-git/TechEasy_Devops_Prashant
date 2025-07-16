@@ -4,64 +4,64 @@ on:
   push:
     branches:
       - main
-    tags:
-      - deploy-*
   workflow_dispatch:
     inputs:
       stage:
         description: 'Stage to deploy (dev/prod)'
-        required: true
+        required: false
         default: 'dev'
 
 jobs:
   deploy:
-    name: Deploy App
     runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
     steps:
       - name: ✅ Checkout repository
         uses: actions/checkout@v3
 
-      - name: "✅ Debug: Show repo structure"
+      - name: 📝 Show repo structure
         run: ls -R
 
-      - name: ✅ Set up SSH key
+      - name: 🔑 Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: ✅ Configure AWS Credentials
+      - name: 🌍 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: ✅ Set up Terraform
+      - name: ⚒️ Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: 🔷 Terraform Init
-        run: cd ec2-automation/terraform && terraform init
-
-      - name: 🔷 Terraform Apply
+      - name: 🌀 Terraform Init
         run: |
           cd ec2-automation/terraform
-          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars"
-     
+          terraform init
+
+      - name: 🚧 Terraform Apply
+        run: |
+          cd ec2-automation/terraform
+          terraform apply -auto-approve -var-file="${{ github.event.inputs.stage }}.tfvars"
+
       - name: 🌐 Get EC2 Public IP
         id: get_ec2_ip
         run: |
           cd ec2-automation/terraform
-          echo "==> Running: terraform output -raw instance_public_ip"
-          IP=$(terraform output -raw instance_public_ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
-          echo "✅ Extracted EC2 IP: $IP"
+          IP=$(terraform output -raw instance_public_ip)
+          echo "EC2 Public IP: $IP"
           echo "ip=$IP" >> $GITHUB_OUTPUT
 
-      - name: 🕒 Wait for SSH
+      - name: ⏳ Wait for SSH to be ready
         run: |
           EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
-          echo "👉 EC2_IP resolved to: $EC2_IP"
           echo "Waiting for SSH on $EC2_IP..."
           for i in {1..15}; do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP 'echo SSH ready'; then
@@ -74,25 +74,24 @@ jobs:
           echo "❌ SSH failed after waiting"
           exit 1
 
-
-
-      - name: 🚀 Deploy Application
+      - name: 🚀 Run deployment script on EC2
         run: |
           EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage || 'dev' }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP \
+            "cd ~/ec2-automation && bash main.sh ${{ github.event.inputs.stage }}"
 
-      - name: 🩷 Validate Health
+      - name: 🩷 Validate app health
         run: |
           EC2_IP="${{ steps.get_ec2_ip.outputs.ip }}"
+          echo "Checking app at http://$EC2_IP:80..."
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$EC2_IP:80)
             if [ "$STATUS" == "200" ]; then
               echo "✅ App is healthy"
               exit 0
-            else
-              echo "Waiting for app to become healthy... ($STATUS)"
-              sleep 10
             fi
+            echo "Waiting for app to become healthy... (HTTP $STATUS)"
+            sleep 10
           done
           echo "❌ App failed health check"
           exit 1
