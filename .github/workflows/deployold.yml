@@ -46,11 +46,23 @@ jobs:
 
                 
 
-      - name: Terraform Init & Apply
-        working-directory: ec2-automation/terraform
+      - name: Terraform Init
+        shell: bash
         run: |
+          cd ec2-automation/terraform
           terraform init
-          terraform apply -auto-approve
+
+      - name: Terraform Plan
+        shell: bash
+        run: |
+          cd ec2-automation/terraform
+          terraform plan -var-file="dev.tfvars"
+
+      - name: Terraform Apply
+        shell: bash
+        run: |
+          cd ec2-automation/terraform
+          terraform apply -auto-approve -var-file="dev.tfvars"
 
       - name: Get EC2 Instance IP
         working-directory: ec2-automation/terraform
