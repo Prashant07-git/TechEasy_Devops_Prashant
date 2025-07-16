@@ -31,20 +31,21 @@ jobs:
           $sshPath = "$env:USERPROFILE\.ssh"
           $keyPath = "$sshPath\id_rsa"
 
-          if (!(Test-Path -Path $sshPath)) {
+          if (-not (Test-Path -Path $sshPath)) {
+              Write-Output "🔷 Creating .ssh directory"
               New-Item -ItemType Directory -Path $sshPath
           }
 
-          if (Test-Path -Path $keyPath) {
-              Write-Output "🔷 Removing existing SSH key"
-              Remove-Item -Path $keyPath -Force
+          if (-not (Test-Path -Path $keyPath)) {
+              Write-Output "🔷 Writing new SSH key"
+              Set-Content -Path $keyPath -Value "${{ secrets.EC2_SSH_KEY }}" -Force
+
+              Write-Output "🔷 Setting permissions"
+              icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
+          } else {
+              Write-Output "✅ SSH key already exists. Skipping."
           }
 
-          Write-Output "🔷 Writing new SSH key"
-          Set-Content -Path $keyPath -Value "${{ secrets.EC2_SSH_KEY }}" -Force
-
-          Write-Output "🔷 Setting permissions"
-          icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
 
 
 
