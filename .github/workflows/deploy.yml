@@ -24,7 +24,7 @@ jobs:
         run: ls -R
 
       - name: 🔷 Debug existing file
-        shell: pwsh
+        shell: powershell
         run: |
           if (Test-Path -Path "$env:USERPROFILE\.ssh\id_rsa") {
             Get-Acl "$env:USERPROFILE\.ssh\id_rsa" | Format-List
