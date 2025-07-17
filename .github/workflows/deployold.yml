@@ -41,6 +41,10 @@ jobs:
           icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
 
                 
+      - name: 🧪 Terraform Import Existing Resources
+        shell: powershell
+        run: |
+          ./ec2-automation/terraform/terraform-import.ps1
 
       - name: Terraform Init
         shell: powershell
