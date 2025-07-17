@@ -34,7 +34,7 @@ jobs:
 
           if (-not (Test-Path -Path $keyPath)) {
               Write-Output "Writing new SSH key"
-              Set-Content -Path $keyPath -Value "${{ secrets.SSH_PRIVATE_KEY }}" -Force
+              Set-Content -Path $keyPath -Value "${{ secrets.EC2_SSH_KEY }}" -Force
 
               Write-Output " Setting permissions"
               icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
