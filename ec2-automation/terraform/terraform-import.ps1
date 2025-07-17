@@ -3,7 +3,7 @@ Write-Output "[INFO] Checking and importing existing AWS resources…"
 $region = "ap-south-1"
 $sgName = "dev-ec2-sg"
 $roleName = "dev-ec2-s3-role"
-
+$profileName = "dev-s3-upload-profile"
 # Go to Terraform dir
 Set-Location ec2-automation/terraform
 
