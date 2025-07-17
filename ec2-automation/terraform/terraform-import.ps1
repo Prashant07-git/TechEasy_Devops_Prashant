@@ -17,7 +17,7 @@ $sgId = aws ec2 describe-security-groups --region $region --filters Name=group-n
 if ($sgId -ne "None" -and $sgId -ne "") {
     Write-Output "[OK] Security Group '$sgName' exists with ID: $sgId"
     Write-Output "[INFO] Importing Security Group into Terraform state…"
-    terraform import aws_security_group.ec2_sg $sgId
+    terraform import -var-file="dev.tfvars" aws_security_group.ec2_sg $sgId
 } else {
     Write-Output "[INFO] Security Group '$sgName' does not exist. Terraform will create it."
 }
@@ -28,7 +28,7 @@ $role = & aws iam get-role --role-name $roleName 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Output "[OK] IAM Role '$roleName' exists"
     Write-Output "[INFO] Importing IAM Role into Terraform state…"
-    terraform import aws_iam_role.ec2_s3_role $roleName
+    terraform import -var-file="dev.tfvars" aws_iam_role.ec2_s3_role $roleName
 } else {
     Write-Output "[INFO] IAM Role '$roleName' does not exist. Terraform will create it."
 }
