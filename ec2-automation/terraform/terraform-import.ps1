@@ -4,6 +4,7 @@ $region = "ap-south-1"
 $sgName = "dev-ec2-sg"
 $roleName = "dev-ec2-s3-role"
 $profileName = "dev-s3-upload-profile"
+$bucketName = "techeazy-app-logs-dev"
 # Go to Terraform dir
 Set-Location ec2-automation/terraform
 
@@ -47,5 +48,15 @@ try {
     Write-Output "[INFO] IAM Instance Profile '$profileName' does not exist. Terraform will create it."
 }
 
+# Check if S3 Bucket exists
+$bucket = aws s3api head-bucket --bucket $bucketName 2>$null
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Output "[OK] S3 Bucket '$bucketName' exists"
+    Write-Output "[INFO] Importing S3 Bucket into Terraform state…"
+    terraform import -var-file="dev.tfvars" aws_s3_bucket.app_logs $bucketName
+} else {
+    Write-Output "[INFO] S3 Bucket '$bucketName' does not exist. Terraform will create it."
+}
 
 Write-Output "[OK] Pre-import complete. You can now run 'terraform plan -var-file=dev.tfvars' and 'terraform apply -var-file=dev.tfvars'."
