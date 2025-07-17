@@ -18,18 +18,20 @@ if ($sgId -ne "None" -and $sgId -ne "") {
     Write-Output "✅ Security Group '$sgName' exists with ID: $sgId"
     Write-Output "🔷 Importing Security Group into Terraform state…"
     terraform import aws_security_group.ec2_sg $sgId
-} else {
+}
+else {
     Write-Output "🔷 Security Group '$sgName' does not exist. Terraform will create it."
 }
 
 # Check if IAM Role exists in AWS
-$roleExists = aws iam get-role --role-name $roleName > $null 2>&1
+$role = aws iam get-role --role-name $roleName -–region $region -ErrorAction SilentlyContinue
 
 if ($LASTEXITCODE -eq 0) {
     Write-Output "✅ IAM Role '$roleName' exists"
     Write-Output "🔷 Importing IAM Role into Terraform state…"
     terraform import aws_iam_role.ec2_s3_role $roleName
-} else {
+}
+else {
     Write-Output "🔷 IAM Role '$roleName' does not exist. Terraform will create it."
 }
 
