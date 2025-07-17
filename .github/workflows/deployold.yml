@@ -42,6 +42,11 @@ jobs:
           else {
               Write-Output " SSH key already exists. Skipping."
           }
+              
+      - name: 🧪 Terraform Import Existing Resources
+        shell: powershell
+        run: |
+          ./ec2-automation/terraform/terraform-import.ps1
 
 
                 
