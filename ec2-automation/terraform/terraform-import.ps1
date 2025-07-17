@@ -33,4 +33,16 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[INFO] IAM Role '$roleName' does not exist. Terraform will create it."
 }
 
+# Check if IAM Instance Profile exists in AWS
+$profile = & aws iam get-instance-profile --instance-profile-name $profileName 2>$null
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Output "[OK] IAM Instance Profile '$profileName' exists"
+    Write-Output "[INFO] Importing IAM Instance Profile into Terraform state…"
+    terraform import -var-file="dev.tfvars" aws_iam_instance_profile.s3_upload_profile $profileName
+} else {
+    Write-Output "[INFO] IAM Instance Profile '$profileName' does not exist. Terraform will create it."
+}
+
+
 Write-Output "[OK] Pre-import complete. You can now run 'terraform plan -var-file=dev.tfvars' and 'terraform apply -var-file=dev.tfvars'."
