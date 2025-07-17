@@ -35,7 +35,7 @@ jobs:
 
           Write-Output "Writing SSH private key"
           $keyContent = "${{ secrets.EC2_SSH_KEY }}"
-          $keyContent -replace "`r`n", "`n" | Set-Content -Path $keyPath -NoNewline -Encoding ascii
+          $keyContent -replace "`r`n", "`n" | Set-Content -Path $keyPath -NoNewline -Encoding utf8
 
           Write-Output "Setting permissions"
           icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
