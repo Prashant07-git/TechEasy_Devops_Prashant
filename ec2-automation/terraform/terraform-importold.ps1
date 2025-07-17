@@ -24,7 +24,7 @@ else {
 }
 
 # Check if IAM Role exists in AWS
-$role = aws iam get-role --role-name $roleName -–region $region -ErrorAction SilentlyContinue
+$role = aws iam get-role --role-name $roleName --region $region -ErrorAction SilentlyContinue
 
 if ($LASTEXITCODE -eq 0) {
     Write-Output "✅ IAM Role '$roleName' exists"
