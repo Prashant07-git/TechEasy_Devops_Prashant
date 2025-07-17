@@ -1,3 +1,4 @@
+
 name: CI/CD - EC2 App Deployment
 
 on:
@@ -32,15 +33,16 @@ jobs:
               New-Item -ItemType Directory -Path $sshPath | Out-Null
           }
 
-          Write-Output "Writing new SSH key with proper encoding"
-          $privateKey = @"
-          ${{ secrets.EC2_SSH_KEY }}
-          "@
+          if (-not (Test-Path -Path $keyPath)) {
+              Write-Output "Writing new SSH key"
+              '${{ secrets.EC2_SSH_KEY }}' | Out-File -FilePath $keyPath -Encoding ascii
 
-          $privateKey | Set-Content -Path $keyPath -Encoding ascii -NoNewline
 
-          Write-Output "Setting permissions"
-          icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
+              Write-Output " Setting permissions"
+              icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
+          } 
+          else {
+              Write-Output " SSH key already exists. Skipping."
           }
 
       - name: 🧪 Terraform Import Existing Resources
