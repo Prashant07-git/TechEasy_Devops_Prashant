@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'Dev'
 
 jobs:
   deploy:
@@ -67,5 +73,6 @@ jobs:
       - name: Deploy App to EC2
         run: |
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-automation/terraform/deploy.sh ubuntu@${{ env.instance_ip }}:/home/ubuntu/deploy.sh
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} 'chmod +x ~/deploy.sh && ~/deploy.sh Dev'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} 'chmod +x ~/deploy.sh && ~/deploy.sh ${{ github.event.inputs.stage }}'
+
 
