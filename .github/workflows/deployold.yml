@@ -67,5 +67,5 @@ jobs:
       - name: Deploy App to EC2
         run: |
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-automation/terraform/deploy.sh ubuntu@${{ env.instance_ip }}:/home/ubuntu/deploy.sh
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} 'chmod +x ~/deploy.sh && ~/deploy.sh'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} 'chmod +x ~/deploy.sh && ~/deploy.sh dev'
 
