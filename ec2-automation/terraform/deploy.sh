@@ -21,8 +21,7 @@ source "$CONFIG_FILE"
 echo "✅ Loaded config: REGION=$REGION, KEY_NAME=$KEY_NAME, PEM_FILE=$PEM_FILE"
 
 echo "🚀 Installing dependencies, deploying app & configuring log uploads..."
-ssh -o StrictHostKeyChecking=no -i "$PEM_FILE" ubuntu@$PUBLIC_IP <<EOF
-set -e
+
 
 S3_BUCKET="techeazy-app-logs-dev"
 AWS_REGION="$REGION"
