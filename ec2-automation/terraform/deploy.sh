@@ -1,5 +1,8 @@
 #!/bin/bash
 
+STAGE=$1
+PUBLIC_IP=$2
+
 LOG_FILE="deployment_$(date +'%Y-%m-%d_%H-%M-%S').log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -e
