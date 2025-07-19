@@ -64,7 +64,8 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ env.instance_ip }} >> ~/.ssh/known_hosts
 
-      # Deploy App
       - name: Deploy App to EC2
         run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ env.instance_ip }} 'echo Hello from EC2 && uptime'
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-automation/terraform/deploy.sh ubuntu@${{ env.instance_ip }}:/home/ubuntu/deploy.sh
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} 'chmod +x ~/deploy.sh && ~/deploy.sh'
+
