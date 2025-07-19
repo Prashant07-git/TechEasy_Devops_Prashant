@@ -48,12 +48,17 @@ jobs:
       # Terraform Plan
       - name: Terraform Plan
         working-directory: ec2-automation/terraform
-        run: terraform plan -var-file="dev.tfvars"
+        run: |
+          stage_lower=$(echo "${{ github.event.inputs.stage }}" | tr '[:upper:]' '[:lower:]')
+          terraform plan -var-file="$stage_lower.tfvars"
 
-      # Terraform Apply
+        # Terraform Apply  
       - name: Terraform Apply
         working-directory: ec2-automation/terraform
-        run: terraform apply -auto-approve -var-file="dev.tfvars"
+        run: |
+          stage_lower=$(echo "${{ github.event.inputs.stage }}" | tr '[:upper:]' '[:lower:]')
+          terraform apply -auto-approve -var-file="$stage_lower.tfvars"
+
 
       # Get EC2 Instance IP
       - name: Get EC2 Instance IP
