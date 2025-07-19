@@ -32,6 +32,13 @@ jobs:
         working-directory: ec2-automation/terraform
         run: terraform init
 
+            # Run Terraform Import Script
+      - name: Import existing resources into Terraform state
+        run: |
+          chmod +x ec2-automation/terraform/terraform-import.sh
+          ec2-automation/terraform/terraform-import.sh
+
+
       # Terraform Plan
       - name: Terraform Plan
         working-directory: ec2-automation/terraform
