@@ -26,7 +26,7 @@ resource "aws_instance" "log_server" {
               cat > /home/ubuntu/fetch-logs.sh <<EOL
               #!/bin/bash
               export AWS_REGION="ap-south-1"
-              S3_BUCKET="techeazy-app-logs-dev"
+              S3_BUCKET="${var.bucket_name}"
               LOG_DIR="/home/ubuntu/logs"
 
               mkdir -p \$LOG_DIR/app_logs
