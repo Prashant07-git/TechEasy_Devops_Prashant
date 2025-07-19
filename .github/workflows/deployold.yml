@@ -1,4 +1,3 @@
-
 name: CI/CD - EC2 App Deployment
 
 on:
@@ -9,74 +8,56 @@ on:
 jobs:
   deploy:
     name: Deploy App to EC2
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
+      # Checkout your repo
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Configure AWS Credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ap-south-1
 
-      - name: 🧪 SSH Key Setup
-        shell: powershell
-        run: |
-          $sshPath = "$env:USERPROFILE\.ssh"
-          $keyPath = "$sshPath\id_rsa"
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-          if (-not (Test-Path -Path $sshPath)) {
-              Write-Output "Creating .ssh directory"
-              New-Item -ItemType Directory -Path $sshPath | Out-Null
-          }
-
-          Write-Output "Writing SSH private key"
-          $keyContent = "${{ secrets.EC2_SSH_KEY }}"
-          $keyContent -replace "`r`n", "`n" | Set-Content -Path $keyPath -NoNewline -Encoding utf8
-
-          Write-Output "Setting permissions"
-          icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):R"
-
-                
-      - name: 🧪 Terraform Import Existing Resources
-        shell: powershell
-        run: |
-          ./ec2-automation/terraform/terraform-import.ps1
-
+      # Terraform Init
       - name: Terraform Init
-        shell: powershell
-        run: |
-          Set-Location ec2-automation/terraform
-          terraform init
+        working-directory: ec2-automation/terraform
+        run: terraform init
 
+      # Terraform Plan
       - name: Terraform Plan
-        shell: powershell
-        run: |
-          Set-Location ec2-automation/terraform
-          terraform plan -var-file="dev.tfvars"
+        working-directory: ec2-automation/terraform
+        run: terraform plan -var-file="dev.tfvars"
 
+      # Terraform Apply
       - name: Terraform Apply
-        shell: powershell
-        run: |
-          Set-Location ec2-automation/terraform
-          terraform apply -auto-approve -var-file="dev.tfvars"
+        working-directory: ec2-automation/terraform
+        run: terraform apply -auto-approve -var-file="dev.tfvars"
 
+      # Get EC2 Instance IP
       - name: Get EC2 Instance IP
         working-directory: ec2-automation/terraform
-        shell: powershell
-        run: |
-          Write-Output "==> Running: terraform output -raw instance_public_ip"
-          $IP = terraform output -raw instance_public_ip
-          Write-Output "✅ Extracted EC2 IP: $IP"
-          echo "ip=$IP" >> $env:GITHUB_OUTPUT
         id: get_ip
-
-      - name: Deploy App to EC2
-        shell: powershell
         run: |
-          Write-Output "Connecting to EC2 and deploying..."
-          ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/id_rsa ubuntu@${{ steps.get_ip.outputs.ip }} 'echo Hello from EC2 && uptime'
+          echo "instance_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
 
+      # Setup SSH Key
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.instance_ip }} >> ~/.ssh/known_hosts
+
+      # Deploy App
+      - name: Deploy App to EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ env.instance_ip }} 'echo Hello from EC2 && uptime'
