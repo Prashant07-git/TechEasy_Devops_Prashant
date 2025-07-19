@@ -79,7 +79,9 @@ jobs:
         run: |
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ec2-automation/Config ubuntu@${{ env.instance_ip }}:/home/ubuntu/Config
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-automation/terraform/deploy.sh ubuntu@${{ env.instance_ip }}:/home/ubuntu/deploy.sh
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} "chmod +x ~/deploy.sh && ~/deploy.sh Dev ${{ env.instance_ip }}"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ env.instance_ip }} \
+           "GITHUB_TOKEN=${{ secrets.PROD_GITHUB_TOKEN }} chmod +x ~/deploy.sh && ~/deploy.sh ${{ github.event.inputs.stage }} ${{ env.instance_ip }}"
+
 
 
 

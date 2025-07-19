@@ -44,7 +44,18 @@ fi
 echo "📦 Cloning repo and building app..."
 cd /home/ubuntu
 rm -rf techeazy-devops || true
-git clone https://github.com/techeazy-consulting/techeazy-devops.git
+echo "📦 Cloning repo and building app..."
+cd /home/ubuntu
+rm -rf techeazy-devops || true
+
+if [[ "$STAGE" == "Prod" ]]; then
+    echo "🔷 Using GitHub token for private repo"
+    git clone https://${GITHUB_TOKEN}@github.com/techeazy-consulting/techeazy-devops.git
+else
+    echo "🔷 Cloning public repo"
+    git clone https://github.com/techeazy-consulting/techeazy-devops.git
+fi
+
 cd techeazy-devops
 chmod +x mvnw || true
 mvn clean package -DskipTests
