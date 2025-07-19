@@ -75,6 +75,7 @@ echo '* * * * * /home/ubuntu/upload-logs.sh >> /home/ubuntu/log-upload-cron.log 
 
 
 echo "✅ App deployed & log upload cron job set."
-EOF
+
 
 echo "✅ Application deployed! Accessible at: http://$PUBLIC_IP:80"
+exit 0
