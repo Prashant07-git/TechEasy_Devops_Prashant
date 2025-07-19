@@ -20,23 +20,6 @@ fi
 source "$CONFIG_FILE"
 echo "✅ Loaded config: REGION=$REGION, KEY_NAME=$KEY_NAME, PEM_FILE=$PEM_FILE"
 
-echo "🌍 Fetching EC2 Public IP from terraform output..."
-PUBLIC_IP=$(terraform output -raw instance_public_ip || true)
-
-if [ -z "$PUBLIC_IP" ]; then
-  echo "❌ Could not fetch EC2 Public IP. Is instance running?"
-  exit 1
-fi
-
-echo "🌍 Target EC2 Public IP: $PUBLIC_IP"
-echo "⏳ Waiting for SSH to become ready..."
-
-until ssh -o StrictHostKeyChecking=no -i "$PEM_FILE" ubuntu@$PUBLIC_IP 'echo SSH is ready' >/dev/null 2>&1; do
-  sleep 5
-done
-
-echo "✅ SSH is ready"
-
 echo "🚀 Installing dependencies, deploying app & configuring log uploads..."
 ssh -o StrictHostKeyChecking=no -i "$PEM_FILE" ubuntu@$PUBLIC_IP <<EOF
 set -e
