@@ -5,7 +5,10 @@ resource "aws_instance" "log_server" {
   subnet_id                   = data.aws_subnet.default.id
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.s3_upload_profile.name
-  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+ vpc_security_group_ids = [
+  var.security_group_id != "" ? var.security_group_id : aws_security_group.ec2_sg[0].id
+]
+
 
   tags = {
     Name = "${var.stage}-log-server"
