@@ -16,6 +16,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_security_group" "ec2_sg" {
+  count       = var.security_group_id == "" ? 1 : 0
   name        = "${var.stage}-ec2-sg"
   description = "Security group for ${var.stage} EC2 instance"
   vpc_id      = data.aws_vpc.default.id
@@ -43,6 +44,7 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 
 resource "aws_iam_role" "ec2_s3_role" {
   name = "${var.stage}-ec2-s3-role"
@@ -96,7 +98,10 @@ resource "aws_instance" "app_server" {
   key_name               = "TechEasy3"
   subnet_id              = data.aws_subnet.default.id
   iam_instance_profile   = aws_iam_instance_profile.s3_upload_profile.name
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  vpc_security_group_ids = [
+  var.security_group_id != "" ? var.security_group_id : aws_security_group.ec2_sg[0].id
+]
+
 
   tags = {
     Name = "${var.stage}-Server"
