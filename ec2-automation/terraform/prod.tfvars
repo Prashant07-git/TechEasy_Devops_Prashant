@@ -1,6 +1,6 @@
 stage         = "prod"
 instance_type = "t2.small"
-key_name      = "TechEasyKey2"
+key_name      = "TechEasy3"
 bucket_name   = "techeazy-app-logs-prod"
 region        = "ap-south-1"
 security_group_id = "sg-0301d2a207e9f7271"
