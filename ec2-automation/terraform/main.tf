@@ -67,7 +67,7 @@ resource "aws_iam_role_policy_attachment" "s3_access" {
 }
 
 resource "aws_iam_instance_profile" "s3_upload_profile" {
-  name = "${var.stage}-s3-upload-profile"
+  name = "dev-s3-upload-profile"
   role = aws_iam_role.ec2_s3_role.name
 }
 
