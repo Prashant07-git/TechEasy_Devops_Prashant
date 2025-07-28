@@ -47,7 +47,7 @@ resource "aws_security_group" "ec2_sg" {
 
 
 resource "aws_iam_role" "ec2_s3_role" {
-  name = "${var.stage}-ec2-s3-role"
+  name = "dev-ec2-s3-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
