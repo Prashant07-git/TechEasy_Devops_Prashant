@@ -21,12 +21,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
   exit 1
 fi
 source "$CONFIG_FILE"
-echo "✅ Loaded config: REGION=$REGION, KEY_NAME=$KEY_NAME, PEM_FILE=$PEM_FILE"
+echo "✅ Loaded config: REGION=$REGION, KEY_NAME=$KEY_NAME, PEM_FILE=$PEM_FILE, S3_BUCKET=$S3_BUCKET"
 
 echo "🚀 Installing dependencies, deploying app & configuring log uploads..."
 
 
-S3_BUCKET="techeazy-app-logs-dev"
+# S3_BUCKET is now picked from config
+
 AWS_REGION="$REGION"
 
 echo "🔷 Updating apt..."
@@ -50,7 +51,7 @@ rm -rf techeazy-devops || true
 
 if [[ "$STAGE" == "Prod" ]]; then
     echo "🔷 Using GitHub token for private repo"
-    git clone https://${GITHUB_TOKEN}@github.com/techeazy-consulting/techeazy-devops.git
+    git clone https://github.com/techeazy-consulting/techeazy-devops.git
 else
     echo "🔷 Cloning public repo"
     git clone https://github.com/techeazy-consulting/techeazy-devops.git
