@@ -20,6 +20,31 @@ resource "aws_instance" "log_server" {
 
               apt-get update -y
               apt-get install -y awscli
+              apt-get install -y amazon-cloudwatch-agent
+
+# Download CloudWatch Agent config from S3 or use a template
+cat > /opt/aws/amazon-cloudwatch-agent/bin/config.json <<'EOC'
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/home/ubuntu/logs/app_logs/app.log",
+            "log_group_name": "/ec2/app_logs",
+            "log_stream_name": "{instance_id}-app"
+          }
+        ]
+      }
+    }
+  }
+}
+EOC
+
+# Start CloudWatch Agent
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
 
               mkdir -p /home/ubuntu/logs/app_logs
               mkdir -p /home/ubuntu/logs/ec2_logs
