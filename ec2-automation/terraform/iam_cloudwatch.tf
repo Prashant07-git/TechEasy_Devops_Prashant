@@ -1,5 +1,5 @@
 resource "aws_iam_policy" "cloudwatch_policy" {
-  name        = "${var.stage}-cloudwatch-policy"
+  name        = "${var.stage}-cloudwatch-policy-v2"
   description = "Policy for EC2 to send logs to CloudWatch"
   policy      = <<EOT
 {
